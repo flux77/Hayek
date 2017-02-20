@@ -2,7 +2,12 @@
 
 Inspired by Tom Schaul's thesis on evolving a compact, concept-based Sokoban solver. 
 
-Generates strategies of the form (AND (indicator & args) (AND (NOT (indicator & args)) (OR (...) (...)))) and simulates them on EURUSD. Merges branches from existing strategies with likelihood 1/(market exposure)^2
+Generates strategies of the form (AND (indicator & args) (AND (NOT (indicator & args)) (OR (...) (...)))) and simulates them on EURUSD, 1M candles. Merges branches from existing strategies with likelihood 1/(market exposure)^2
+
+Work in progress. Next few updates will include:
+* significantly faster simulation by generating table of returns at each candle at various trailing distances
+* connecting to InteractiveBroker API for real-time testing and trading
+* Adding neural networks to the agnts' toolbelts
 
 ## Installation
 
