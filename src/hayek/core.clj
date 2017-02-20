@@ -113,6 +113,113 @@
         (if (params :log_performace)
           (log-agnt-performace agnt tradelog agntlog)
           tradelog))
+      (loop [periods periods
+             tradelog []]
+        (if (= 0 (count periods))
+          (if (params :log_performace)
+            (log-agnt-performace agnt tradelog agntlog)
+            tradelog)
+          (if (and (< 0 (count tradelog)) (= 0 (count (last tradelog))))
+            -1
+            (let [[trades agnt] (simulate-period (first periods) agnt params)]
+              (recur (rest periods) (conj tradelog trades))))))))
+
+
+  (defn generate-and-sim
+    [periods agntlog params]
+    (let [agnt (generate-agnt params)]
+      (simulate-all-periods agnt periods agntlog params)))
+
+
+  (defn window-exposure
+    "Not built for data-stream. Window assumes every agent tested up to current."
+    ([n agntlog] (map #(window-exposure n (% :num_trades) (% :exposure))
+                      (agntlog :agnts)))
+    ([n num_trades exposure]
+     (/ (apply + (map #(* (nth num_trades %) (nth exposure %))
+                      (range (- (count exposure) n) (count exposure))))
+        (apply + (take-last n num_trades)))))
+
+
+  (defn roullete
+    "Takes a vector of magnitudes and returns index n with proportionate likelihood"
+    [coll]
+    (let [num (count coll)
+          val (rand)
+          coll (map (partial * (/ 1 (apply + coll))) coll)]
+      (loop [sum (first coll)
+             coll (rest coll)]
+        (if (> sum val)                    
+          (dec (- num (count coll)))
+          (recur (+ sum (first coll)) (rest coll))))))
+
+  (defn load-agnt
+    [id]
+    (:agnt (read-string (slurp (apply str "resources/agnts/" id ".agnt")))))
+
+
+
+  
+  (defn select-random-agnt
+    [agntlog params]
+    (let [exposure (window-exposure (params :window_size) agntlog)
+          id (roullete (power (map (partial / 1) exposure) 2))] ;; maybe ^2
+      [id, (load-agnt id)])) 
+  
+
+  (defn merge-and-sim
+    [periods agntlog params]
+    (let [[id1 agnt1] (select-random-agnt agntlog params)
+          [id2 agnt2] (select-random-agnt agntlog params)
+          fn_tree (merge-fn-trees (agnt1 :fn_tree) (agnt2 :fn_tree) params)
+          agnt (assoc (generate-agnt params fn_tree) :parents [id1 id2])]
+      (simulate-all-periods agnt periods agntlog params)
+      ))
+        
+
+  (defn all-trade-results
+    [periods atr_candles atr_dist bid_fn]
+    (let [agnt {:fn '(fn [period] (repeat (count period) true))
+                :atr_candles atr_candles
+                :atr_dist atr_dist
+                :closing_fn 'trailing-stop-ATR
+                :bid_fn bid_fn
+                }
+          params {:update_agnt false
+                  :log_performace false
+                  :every_candle true
+                  }]
+      (simulate-all-periods agnt periods nil params)))
+
+  
+  (defn crawl-fn-tree
+    ([fn_tree fun] (crawl-fn-tree fn_tree fun [] []))
+    ([fn_tree fun loc results]
+     (let [node (reduce #(%1 %2) fn_tree loc)]
+       (if (contains? node :gate)
+         (loop [results results
+                i (range ((node :gate) :num-inp))]
+           (if (= 0 (count i))
+             results
+             (recur (apply conj results
+                          (crawl-fn-tree fn_tree fun
+                                         (conj loc :gate
+                                               (keyword (str (first i)))) results))
+                    (rest i))))
+         [[loc, (fun (node :indicator))]]))))
+
+  
+  ;; (defn optimize-fn-tree
+    ;; "takes an agent and runs one round of a greedy optimization."
+    ;; [periods agnt params]
+
+    ;; (let [params (assoc params :log_performance true)
+          ;; fun ]
+    
+  ;; (fn 
+
+    ;; (def node ((random-fn-tree params) :indicator))
+    ;; ))
 
   
   )
@@ -164,28 +271,16 @@
                  :memo-trade-fn (resetable-memoize all-trade-results)
                  })
     )
-
-  (def new_workers (n-serial-workers 10 'generate-and-sim periods agntlog params))
-  (def merge_workers (n-serial-workers 2 'merge-and-sim periods agntlog params))
+  (do
+    (def new_workers (n-serial-workers 16 'generate-and-sim periods agntlog params))
+    (def merge_workers (n-serial-workers 8 'merge-and-sim periods agntlog params)))
   
   (do
-    (kill-workers new_workers) 
+    (kill-workers new_workers)
     (kill-workers merge_workers))
 
   (generate-and-sim periods agntlog params)
   (merge-and-sim periods agntlog params)
-
-  (defn make-lookup-table
-    [filename periods]
-    (map (let [agnt {:bid_fn '(fn [period] (repeat (count period) true))}
-               params {:update false
-                       :memoize_trades false
-                       :leverage 1
-                       :every_candle true
-                       :log_performance false}]
-           (simulate-all-periods 
-     [0.5 1 1.5 2 3 4]
-      
   
   )
 

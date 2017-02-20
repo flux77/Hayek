@@ -14,6 +14,15 @@
                  val coll)
         (range 3))))
 
+(defn power [base exp] (apply * (repeat base exp)))
+
+(defn stdev [coll]
+  (defn squares [avg coll] (map #(power (- % avg) 2) coll))
+  (let [avg (mean coll)
+        squares (squares avg coll)
+        total (count coll)]
+    (Math/sqrt (/ (reduce + squares) (- total 1)))))
+
 
 (defn round-up [val] (int (Math/ceil val)))
 
@@ -49,7 +58,7 @@
 a long in nanoseconds."
   ([& forms]
    `(let [start# (System/nanoTime)]
-       [~@forms (/ (- (System/nanoTime) start#) 1000000.)])))
+       [~@forms (/ (- (System/nanoTime) start#) 1000000000.)])))
 
 
 (defn resetable-memoize
