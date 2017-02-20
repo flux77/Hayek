@@ -17,3 +17,7 @@ Be sure install https://github.com/sbhaaf/clj-ta-lib for the technical indicator
 
 Not currently in format supporting uberjar, but could be easily. 
 Open in nREPL and spin up workers to start testing strategies.
+
+## Note
+
+This will only be public while I'm searching for a job.
