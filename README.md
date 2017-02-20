@@ -1,36 +1,14 @@
-# hayek
+# Network of evolving trading strategies 
 
-FIXME: description
+Inspired by Tom Schaul's thesis on evolving a compact, concept-based Sokoban solver. 
+
+Generates strategies of the form (AND (indicator & args) (AND (NOT (indicator & args)) (OR (...) (...)))) and simulates them on EURUSD. Merges branches from existing strategies with likelihood 1/(market exposure)^2
 
 ## Installation
 
-Download from http://example.com/FIXME.
+Be sure install https://github.com/sbhaaf/clj-ta-lib for the technical indicator library. Other deps in project.clj
 
 ## Usage
 
-FIXME: explanation
-
-    $ java -jar hayek-0.1.0-standalone.jar [args]
-
-## Options
-
-FIXME: listing of options this app accepts.
-
-## Examples
-
-...
-
-### Bugs
-
-...
-
-### Any Other Sections
-### That You Think
-### Might be Useful
-
-## License
-
-Copyright © 2016 FIXME
-
-Distributed under the Eclipse Public License either version 1.0 or (at
-your option) any later version.
+Not currently in format supporting uberjar, but could be easily. 
+Open in nREPL and spin up workers to start testing strategies.
